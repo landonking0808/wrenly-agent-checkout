@@ -1,0 +1,22 @@
+{
+  "_note": "Money guardrails. The agent cannot change these at runtime; they are read by code that sits between every AI tool call and PayPal.",
+  "crew_share_pct": 0.70,
+  "crew_extra_hour_rate": 28,
+  "margin_floor_abs": 15.00,
+  "margin_floor_pct": 0.10,
+  "paypal_fee_pct": 0.0349,
+  "paypal_fee_fixed": 0.49,
+  "payout_fee_fixed": 0.25,
+  "max_order_amount": 600.00,
+  "max_payout_amount": 450.00,
+  "max_refund_amount": 600.00,
+  "refunds_require_human": true,
+  "refund_policy": {
+    "missed_area":   {"pct": 0.15, "label": "One room or area missed"},
+    "quality":       {"pct": 0.25, "label": "Clean below standard in several areas"},
+    "late":          {"pct": 0.10, "label": "Crew more than an hour late"},
+    "damage":        {"pct": 0.50, "label": "Something was damaged (claim handled separately)"},
+    "no_show":       {"pct": 1.00, "label": "Crew did not show up"}
+  },
+  "checklist": ["Kitchen counters + sink", "Bathrooms scrubbed", "Floors vacuumed + mopped", "Dusting (reachable surfaces)", "Trash out", "Beds made", "Final walkthrough photo"]
+}

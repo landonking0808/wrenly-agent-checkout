@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book a cleaning · Wrenly Home</title>
+<link rel="icon" href="/static/logo.svg">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+.wrap{max-width:1180px;margin:0 auto;padding:28px 28px 8px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.9fr);gap:24px}
+.hero h1{font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0 0 6px;font-weight:650}
+.hero p{margin:0 0 18px;color:var(--ink-2);max-width:56ch}
+.chat{display:flex;flex-direction:column;height:560px;overflow:hidden}
+.msgs{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:var(--surface-2)}
+.msg{max-width:78%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;line-height:1.45}
+.msg.bot{background:var(--surface);border:1px solid var(--line);border-top-left-radius:4px;align-self:flex-start}
+.msg.me{background:var(--brand);color:#fff;border-top-right-radius:4px;align-self:flex-end}
+.msg .meta{display:block;margin-top:6px;font-size:11px;color:var(--ink-3)}
+.tool{align-self:flex-start;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:#fff;border:1px dashed var(--line-2);border-radius:8px;padding:5px 9px}
+.tool b{color:var(--brand)}
+.tool.err b{color:var(--bad)}
+.composer{display:flex;gap:10px;padding:14px;border-top:1px solid var(--line);background:var(--surface)}
+.composer input{flex:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px;background:var(--surface)}
+.chip{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--ink-2)}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.side{display:flex;flex-direction:column;gap:16px}
+.panel{padding:18px}
+.total{font-size:36px;font-weight:650;letter-spacing:-.02em;margin:6px 0 2px}
+.lines{margin:12px 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.lines li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.lines li span:last-child{font-variant-numeric:tabular-nums;font-weight:550}
+.empty{color:var(--ink-3);font-size:13.5px;padding:6px 0}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+.steps li{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:7px 0;color:var(--ink-3);font-size:13.5px}
+.steps li i{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2);margin-top:1px;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px}
+.steps li.done{color:var(--ink)} .steps li.done i{background:var(--brand);border-color:var(--brand);color:#fff}
+.steps li.now{color:var(--ink)} .steps li.now i{border-color:var(--brand)}
+.steps small{display:block;color:var(--ink-3);font-family:var(--mono);font-size:11px}
+#paypal-area{margin-top:12px}
+.mockpp{width:100%;background:#ffc439;border:0;border-radius:6px;height:44px;font-weight:700;color:#003087;font-size:15px;letter-spacing:.01em}
+.mockpp:hover{filter:brightness(.97)}
+.note{font-size:12px;color:var(--ink-3);margin-top:8px}
+@media (max-width:860px){.wrap{grid-template-columns:1fr;padding:16px}.chat{height:520px}.hero h1{font-size:24px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="/"><img src="/static/logo.svg" alt="" width="28" height="28">Wrenly Home</a>
+  <nav><a class="on" href="/">Book</a><a href="/ops">Ops dashboard</a></nav>
+  <div class="spacer"></div>
+  <span class="badge ai" id="ai-badge"><span class="dot"></span>AI</span>
+  <span class="badge pp" id="pp-badge"><span class="dot"></span>PayPal</span>
+  <span class="badge"><span class="dot"></span>Sandbox demo · no real money</span>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="hero">
+      <h1>Tell us about your home. Get a price in one message.</h1>
+      <p>Wrenly's booking agent reads your description, prices it from our list, and holds your payment with PayPal. You're only charged after the crew finishes and checks off the cleaning list.</p>
+    </div>
+    <div class="card chat">
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="chips" id="chips">
+        <button class="chip">3 bed, 2 bath, every two weeks</button>
+        <button class="chip">2 bedroom apartment, monthly, we have a dog</button>
+        <button class="chip">4 bed 3 bath one-time move-out clean with oven and fridge</button>
+      </div>
+      <form class="composer" id="composer">
+        <input id="input" autocomplete="off" placeholder="e.g. 3 bed, 2 bath house, every two weeks" aria-label="Message">
+        <button class="btn primary" id="send">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="card panel">
+      <h3>Your quote</h3>
+      <div id="quote"><div class="empty">Your price shows up here as soon as the agent quotes it.</div></div>
+    </div>
+    <div class="card panel">
+      <h3>Payment</h3>
+      <ol class="steps" id="steps"></ol>
+      <div id="paypal-area"></div>
+    </div>
+  </aside>
+</main>
+<p class="foot">Wrenly Home · Peoria, IL. This is a PayPal sandbox demo of Wrenly Agent Checkout; Wrenly has not completed a paid job yet. Only the 3-bed biweekly $179 price is Wrenly's published price; other prices are a labeled sample table.</p>
+<div class="toast" id="toast"></div>
+<script src="/static/common.js"></script>
+<script src="/static/book.js"></script>
+</body>
+</html>

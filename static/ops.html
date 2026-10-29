@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ops · Wrenly Agent Checkout</title>
+<link rel="icon" href="/static/logo.svg">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+.wrap{max-width:1360px;margin:0 auto;padding:22px 28px}
+.head{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px}
+.head h1{font-size:22px;letter-spacing:-.02em;margin:0;font-weight:650}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{padding:14px 16px}
+.kpi .v{font-size:24px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--ink-3)}
+.kpi.attn{border-color:#f0c66b;background:#fffaf0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.sec-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sec-h .spacer{flex:1}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;font-weight:600;color:var(--ink-3);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);letter-spacing:.02em;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13px}
+tbody tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+td.r,th.r{text-align:right}
+.ids{display:flex;flex-direction:column;gap:1px}
+.ids span{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.ids span em{font-style:normal;color:var(--ink-3);display:inline-block;width:58px}
+.m-ok{color:var(--ok);font-weight:600}.m-bad{color:var(--bad);font-weight:600}
+.appr{padding:14px 16px;border-bottom:1px solid var(--line)}
+.appr:last-child{border-bottom:0}
+.appr .top{display:flex;align-items:center;gap:8px}
+.appr .amt{font-size:20px;font-weight:650;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.appr p{margin:6px 0 10px;color:var(--ink-2);font-size:13px}
+.appr .acts{display:flex;gap:8px}
+.empty{padding:22px 16px;color:var(--ink-3);font-size:13px}
+.ledger{margin-top:16px}
+.ledger td{font-size:12.5px;padding:7px 12px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--surface);box-shadow:-12px 0 40px rgba(16,24,20,.14);transform:translateX(105%);transition:transform .25s ease-out;z-index:40;overflow:auto}
+.drawer.on{transform:none}
+.drawer .in{padding:22px}
+.drawer td,.drawer th{padding:7px 8px;font-size:12px}
+.drawer h2{margin:4px 0 2px;font-size:20px;letter-spacing:-.01em}
+.dl{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:13px;margin:14px 0}
+.dl dt{color:var(--ink-3)} .dl dd{margin:0}
+.bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 6px;background:#eef0ee}
+.bar i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.sub{font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;margin:20px 0 6px}
+.scrim{position:fixed;inset:0;background:rgba(16,24,20,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:39}
+.scrim.on{opacity:1;pointer-events:auto}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="/"><img src="/static/logo.svg" alt="" width="28" height="28">Wrenly Home</a>
+  <nav><a href="/">Book</a><a class="on" href="/ops">Ops dashboard</a></nav>
+  <div class="spacer"></div>
+  <span class="badge ai" id="ai-badge"><span class="dot"></span>AI</span>
+  <span class="badge pp" id="pp-badge"><span class="dot"></span>PayPal</span>
+  <span class="badge"><span class="dot"></span>Sandbox demo · no real money</span>
+</header>
+<main class="wrap">
+  <div class="head">
+    <div><div class="muted" style="font-size:12.5px">Wrenly Agent Checkout</div><h1>Money operations</h1></div>
+    <div class="spacer"></div>
+    <span class="muted" id="updated" style="font-size:12px"></span>
+  </div>
+  <section class="kpis" id="kpis"></section>
+  <div class="grid">
+    <section class="card">
+      <div class="sec-h"><h3>Jobs</h3><span class="muted" id="jobcount" style="font-size:12px"></span></div>
+      <div id="jobs"></div>
+    </section>
+    <section class="card" id="approvals-card">
+      <div class="sec-h"><h3>Needs a human</h3><div class="spacer"></div>
+        <label class="muted" style="font-size:12px">Approver <input id="approver" style="width:130px;padding:4px 8px;font-size:12.5px"></label></div>
+      <div id="approvals"></div>
+    </section>
+  </div>
+  <section class="card ledger">
+    <div class="sec-h"><h3>Ledger</h3><span class="muted" style="font-size:12px">append-only · every money action with its PayPal id and PayPal-Request-Id</span></div>
+    <div id="ledger"></div>
+  </section>
+</main>
+<p class="foot">Sandbox demo. Wrenly Home has not completed a paid job yet; every job here is test data. Times are US Central.</p>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Job detail"><div class="in" id="drawer-in"></div></aside>
+<div class="toast" id="toast"></div>
+<script src="/static/common.js"></script>
+<script src="/static/ops.js"></script>
+</body>
+</html>

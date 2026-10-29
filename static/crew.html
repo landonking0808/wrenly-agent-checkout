@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crew job · Wrenly Home</title>
+<link rel="icon" href="/static/logo.svg">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+.wrap{max-width:620px;margin:0 auto;padding:24px 20px}
+h1{font-size:24px;letter-spacing:-.02em;margin:0 0 4px}
+.panel{padding:18px;margin-top:16px}
+.check{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.check:last-child{border-bottom:0}
+.check input{width:20px;height:20px;accent-color:var(--brand)}
+.row{display:flex;gap:12px;align-items:center;margin-top:14px}
+.row input{width:90px}
+.result .step{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.result .step:last-child{border-bottom:0}
+.result .step b{font-family:var(--mono);font-size:12px;color:var(--brand)}
+.result .step.err b{color:var(--bad)}
+.summary{font-size:15px;line-height:1.5;margin:0 0 10px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="/"><img src="/static/logo.svg" alt="" width="28" height="28">Wrenly Crew</a>
+  <div class="spacer"></div><span class="badge"><span class="dot"></span>Sandbox demo</span>
+</header>
+<main class="wrap">
+  <p class="muted" style="margin:0">Job <span class="mono" id="jid"></span></p>
+  <h1 id="title">Loading…</h1>
+  <div id="meta" class="muted"></div>
+  <div class="card panel">
+    <h3>Cleaning checklist</h3>
+    <div id="list"></div>
+    <div class="row"><label for="extra">Extra hours worked</label><input id="extra" type="number" min="0" max="8" step="0.5" value="0"><span class="muted" id="rate"></span></div>
+    <div class="row"><button class="btn primary" id="done">Mark job done</button><span class="muted" id="hint"></span></div>
+  </div>
+  <div class="card panel result" id="result" hidden>
+    <h3>Settlement agent</h3>
+    <p class="summary" id="summary"></p>
+    <div id="steps"></div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="/static/common.js"></script>
+<script>
+const JID = decodeURIComponent(location.pathname.split("/").pop());
+function renderResult(r) {
+  $("#result").hidden = false;
+  $("#summary").textContent = r.summary;
+  $("#steps").innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:4px">engine: ${esc(r.engine)}</div>` + r.steps.map(s => {
+    const o = s.result || {};
+    const txt = o.error ? "refused: " + o.error : s.tool === "get_job" ? `read job · ${money(o.list_price)} · ${o.status}` : o.capture_id ? `captured ${money(o.amount)} · ${o.capture_id}` : o.payout_batch_id ? `paid ${money(o.amount)} · batch ${o.payout_batch_id}` :
+      o.margin !== undefined ? `margin ${money(o.margin)} vs floor ${money(o.floor)} → ${o.ok ? "PASS" : "FAIL"}` : o.approval_id ? `held for approval ${o.approval_id}` : o.status || "ok";
+    return `<div class="step ${o.error ? "err" : ""}"><b>${esc(s.tool)}</b><span>${esc(txt)}${o.deduped ? " (deduplicated)" : ""}</span></div>`;
+  }).join("");
+}
+(async () => {
+  const [j, cfg] = await Promise.all([api("/api/jobs/" + encodeURIComponent(JID)), api("/api/config")]);
+  $("#jid").textContent = j.id;
+  $("#title").textContent = `${j.bedrooms}-bed clean for ${j.customer_name}`;
+  $("#meta").innerHTML = `${esc(j.address)} · ${esc(j.service_date)} · ${statusPill(j.status)} · crew pay ${money(j.list_price * cfg.crew_share_pct)}`;
+  $("#rate").textContent = `paid at ${money(cfg.crew_extra_hour_rate)}/hour on top of the 70% share`;
+  $("#list").innerHTML = j.checklist_items.map((c, i) => `<label class="check"><input type="checkbox" data-k="${esc(c)}" ${j.checklist && j.checklist[c] ? "checked" : ""}>${esc(c)}</label>`).join("");
+  if (!["authorized"].includes(j.status)) { $("#done").disabled = true; $("#hint").textContent = j.status === "awaiting_payment" ? "Waiting for the customer's PayPal approval." : "Already completed."; }
+  $("#done").onclick = async () => {
+    const checklist = {}; document.querySelectorAll("#list input").forEach(i => checklist[i.dataset.k] = i.checked);
+    $("#done").disabled = true; $("#hint").textContent = "Settlement agent working…";
+    try { const r = await api(`/api/jobs/${encodeURIComponent(JID)}/complete`, {method: "POST", body: {checklist, extra_hours: Number($("#extra").value || 0)}}); renderResult(r); $("#hint").textContent = ""; toast("Job settled"); }
+    catch (e) { $("#hint").textContent = e.message; $("#done").disabled = false; }
+  };
+})();
+</script>
+</body>
+</html>

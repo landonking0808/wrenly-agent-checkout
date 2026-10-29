@@ -1,0 +1,26 @@
+{
+  "_note": "Wrenly Home price list. ONLY the 3-bed biweekly $179 row is Wrenly's published price; every other number in this file is a SAMPLE for the sandbox demo and is labeled as such.",
+  "currency": "USD",
+  "market": "Peoria, IL",
+  "published_prices": [{"bedrooms": 3, "frequency": "biweekly", "price": 179}],
+  "base_prices": {
+    "_sample": true,
+    "1": {"weekly": 99,  "biweekly": 109, "monthly": 129, "one_time": 149},
+    "2": {"weekly": 125, "biweekly": 139, "monthly": 159, "one_time": 189},
+    "3": {"weekly": 159, "biweekly": 179, "monthly": 199, "one_time": 239},
+    "4": {"weekly": 199, "biweekly": 219, "monthly": 249, "one_time": 299},
+    "5": {"weekly": 239, "biweekly": 259, "monthly": 289, "one_time": 349}
+  },
+  "included_bathrooms": {"_sample": true, "1": 1, "2": 1.5, "3": 2, "4": 2.5, "5": 3},
+  "extra_bathroom_price": {"_sample": true, "per_half_bath": 12},
+  "add_ons": {
+    "_sample": true,
+    "inside_fridge":     {"label": "Inside the fridge", "price": 35},
+    "inside_oven":       {"label": "Inside the oven", "price": 35},
+    "interior_windows":  {"label": "Interior windows", "price": 45},
+    "laundry":           {"label": "Wash + fold one load", "price": 25},
+    "pets":              {"label": "Pet hair treatment", "price": 15},
+    "deep_clean":        {"label": "First-visit deep clean", "price": 80}
+  },
+  "max_bedrooms": 5
+}
