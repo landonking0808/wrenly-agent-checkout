@@ -111,7 +111,7 @@ scripts/       sandbox_e2e.py (real sandbox run), screenshots.py (headless UI ca
 Requirements: Python 3.10+.
 
 ```bash
-git clone <this repo> wrenly-agent-checkout && cd wrenly-agent-checkout
+git clone https://github.com/landonking0808/wrenly-agent-checkout.git && cd wrenly-agent-checkout
 ./run.sh
 ```
 
