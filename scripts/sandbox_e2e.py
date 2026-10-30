@@ -9,6 +9,10 @@ How the buyer approval happens, in order of preference:
   2. --approve card:    pay with a PayPal sandbox test card (needs Advanced Card Processing on the sandbox app)
   3. --approve manual:  print the approval link and wait for you to approve it in a browser
 Writes the ids (never secrets) to docs/sandbox-run.json.
+
+  --preflight   only check the credentials: get an OAuth token, confirm the app has the Payouts scope,
+                and that the crew receiver is not the buyer. Moves no money, creates nothing.
+  --headed      run the buyer approval in a visible Chromium (e.g. under xvfb-run) if PayPal balks at headless.
 """
 from __future__ import annotations
 
@@ -42,10 +46,39 @@ def load_creds(a) -> dict:
     return out
 
 
-def approve_in_browser(url: str, email: str, password: str, order_id: str, pp) -> bool:
+PAYOUTS_SCOPE = "https://uri.paypal.com/services/payments/payouts"
+
+
+def preflight(cr: dict, base: str = "https://api-m.sandbox.paypal.com", http=None) -> bool:
+    """Check the sandbox credentials without moving money. Returns True when everything the run needs is there."""
+    import httpx
+    http = http or httpx
+    r = http.post(f"{base}/v1/oauth2/token", data={"grant_type": "client_credentials"},
+                  auth=(cr["client_id"], cr["client_secret"]), timeout=45)
+    if r.status_code != 200:
+        print(f"  FAIL oauth token: HTTP {r.status_code} (wrong client id/secret, or not a sandbox app)")
+        return False
+    d = r.json()
+    scopes = set((d.get("scope") or "").split())
+    print(f"  ok   oauth token (app_id {d.get('app_id', '?')}, {len(scopes)} scopes)")
+    ok = True
+    if PAYOUTS_SCOPE in scopes or any("payouts" in x for x in scopes):
+        print("  ok   Payouts scope present")
+    else:
+        print("  FAIL Payouts scope missing: enable Payouts in the sandbox app's features, then wait a few minutes")
+        ok = False
+    if cr.get("buyer_email") and cr["buyer_email"].strip().lower() == (cr.get("crew_email") or "").strip().lower():
+        print("  FAIL crew_email is the buyer: use a second sandbox Personal account for the crew payout")
+        ok = False
+    if not (cr.get("buyer_email") and cr.get("buyer_password")):
+        print("  warn no buyer_email/buyer_password: approval falls back to a sandbox card, then to a manual link")
+    return ok
+
+
+def approve_in_browser(url: str, email: str, password: str, order_id: str, pp, headed: bool = False) -> bool:
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = p.chromium.launch(headless=not headed)
         page = b.new_page(viewport={"width": 1100, "height": 900})
         page.goto(url, wait_until="domcontentloaded", timeout=90000)
         page.wait_for_selector("#email", timeout=60000)
@@ -78,8 +111,13 @@ def main() -> None:
     ap.add_argument("--buyer-email")
     ap.add_argument("--buyer-password")
     ap.add_argument("--approve", choices=["browser", "card", "manual", "auto"], default="auto")
+    ap.add_argument("--preflight", action="store_true", help="check credentials and Payouts scope only; moves no money")
+    ap.add_argument("--headed", action="store_true", help="visible Chromium for the buyer approval (needs DISPLAY)")
     a = ap.parse_args()
     cr = load_creds(a)
+    if a.preflight:
+        print("Wrenly Agent Checkout · PayPal sandbox preflight")
+        sys.exit(0 if preflight(cr) else 1)
 
     stamp = time.strftime("%Y%m%d-%H%M%S")
     os.environ.update({"PAYPAL_CLIENT_ID": cr["client_id"], "PAYPAL_CLIENT_SECRET": cr["client_secret"], "PAYPAL_ENV": "sandbox",
@@ -125,7 +163,7 @@ def main() -> None:
         ok = False
         if mode == "browser":
             try:
-                ok = approve_in_browser(url, cr["buyer_email"], cr["buyer_password"], o["order_id"], pp)
+                ok = approve_in_browser(url, cr["buyer_email"], cr["buyer_password"], o["order_id"], pp, headed=a.headed)
             except Exception as e:
                 print(f"  browser approval failed: {e}")
         if not ok:

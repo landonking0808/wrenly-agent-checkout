@@ -154,6 +154,9 @@ Covers quote extraction (offline), the price table, the margin rule, idempotency
 ### Real PayPal sandbox run (API only)
 
 ```bash
+.venv/bin/pip install playwright && .venv/bin/playwright install chromium   # only for the headless buyer approval
+PAYPAL_CLIENT_ID=... PAYPAL_CLIENT_SECRET=... CREW_PAYPAL_EMAIL=... \
+  .venv/bin/python scripts/sandbox_e2e.py --preflight      # checks the keys and the Payouts scope; moves no money
 PAYPAL_CLIENT_ID=... PAYPAL_CLIENT_SECRET=... CREW_PAYPAL_EMAIL=... \
   .venv/bin/python scripts/sandbox_e2e.py --buyer-email <sandbox buyer> --buyer-password <password>
 ```
