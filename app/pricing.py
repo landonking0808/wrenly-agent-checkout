@@ -82,5 +82,5 @@ def build_quote(bedrooms: int, bathrooms: float | None = None, frequency: str = 
 
 def explain(q: Quote) -> str:
     parts = [f"${l['amount']:.0f} {l['label']}" for l in q.lines]
-    src = "Wrenly's published price" if q.published_price else "the sample price table (sandbox demo)"
+    src = "Wrenly's published price" if q.published_price else "the sample price table (demo)"
     return f"{' + '.join(parts)} = ${q.total:.2f}. Base rate from {src}; regular visits cost less per visit than a one-time clean because the home stays maintained."

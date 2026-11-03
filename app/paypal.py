@@ -226,7 +226,7 @@ class MockPayPal:
             o = self.orders[order_id]
             o["status"] = "APPROVED"
             o["payer"] = {"name": {"given_name": "Mock", "surname": "Buyer"},
-                          "email_address": "sb-buyer@personal.example.com", "payer_id": "MOCKPAYER01"}
+                          "email_address": "demo-buyer@personal.example.com", "payer_id": "MOCKPAYER01"}
             o["links"] = [_link(f"/v2/checkout/orders/{order_id}", "self"),
                           _link(f"/v2/checkout/orders/{order_id}", "update", "PATCH"),
                           _link(f"/v2/checkout/orders/{order_id}/authorize", "authorize", "POST")]

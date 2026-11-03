@@ -15,12 +15,27 @@ import re
 from . import config, db, extract, money, pricing
 from .gemini import GeminiUnavailable, function_calls, function_response, generate, text_of
 
-DEMO_CREW = {"name": "Peoria Crew A (sandbox)", "email_env": "CREW_PAYPAL_EMAIL", "email_default": "crew-a@personal.example.com"}
+DEMO_CREW = {"name": "Peoria Crew A (demo)", "email_env": "CREW_PAYPAL_EMAIL", "email_default": "crew-a@personal.example.com"}
+
+# ---------------------------------------------------------------- runtime PayPal mode
+
+
+def mode_note() -> str:
+    """What the agents may say about the PayPal side. 'sandbox' only when real sandbox credentials are configured."""
+    from .paypal import client
+    mode = client().mode
+    if mode == "sandbox":
+        return "This runs against the PayPal sandbox: sandbox test money only, no real money moves."
+    if mode == "live":
+        return "This runs against live PayPal: real money moves."
+    return ("This is demo mode: every PayPal API response is simulated by a local mock (not PayPal, not the sandbox), "
+            "so no real money moves.")
+
 
 # ---------------------------------------------------------------- booking agent
 
 BOOKING_SYSTEM = """You are Wrenly, the booking agent for Wrenly Home, a home-cleaning service in Peoria, Illinois.
-This is a PayPal SANDBOX demo: no real money moves and Wrenly has not completed a paid job yet. Never claim otherwise.
+{mode_note} Wrenly has not completed a paid job yet. Never claim otherwise.
 
 How you work:
 - When the customer describes their home, call quote_cleaning with bedrooms, bathrooms, frequency and add_ons you can infer.
@@ -94,7 +109,7 @@ class BookingTools:
                 return {"job_id": j["id"], "order_id": j["order_id"], "amount": j["list_price"], "note": "checkout already open"}
         c = self.state.setdefault("contact", {})
         jid = db.job_create(
-            customer_name=customer_name or c.get("customer_name") or "Sandbox Customer",
+            customer_name=customer_name or c.get("customer_name") or "Demo Customer",
             customer_email=customer_email or c.get("customer_email") or "",
             address=address or c.get("address") or "Peoria, IL (demo)",
             service_date=service_date or c.get("service_date") or "next available",
@@ -193,7 +208,7 @@ def booking_turn(chat_id: str, text: str) -> dict:
     reply = None
     if config.ai_enabled():
         try:
-            reply, history, engine = _ai_loop(history, text, BOOKING_SYSTEM, BOOKING_TOOLS, tools.run, state)
+            reply, history, engine = _ai_loop(history, text, BOOKING_SYSTEM.format(mode_note=mode_note()), BOOKING_TOOLS, tools.run, state)
         except GeminiUnavailable as e:
             engine = f"offline-rules (AI unavailable: {str(e)[:60]})"
     if reply is None:
@@ -228,7 +243,7 @@ SETTLE_SYSTEM = """You are Wrenly's settlement agent. A crew has marked a cleani
 2. check_margin (crew gets 70% of list; Wrenly must keep at least max($15, 10%) after PayPal fees),
 3. if the margin check passes, send_crew_payout; if it fails, hold_payout_for_review with a one-sentence reason a manager can act on.
 Never call send_crew_payout after a failed margin check. Stop after the payout is sent or held, then reply with a two-sentence summary
-that cites the PayPal ids. This is a PayPal sandbox demo."""
+that cites the PayPal ids. {mode_note}"""
 
 SETTLE_TOOLS = [
     {"name": "get_job", "description": "Read the job, its price, crew and PayPal ids.", "parameters": {"type": "object", "properties": {}}},
@@ -268,7 +283,7 @@ def settle(job_id: str) -> dict:
     engine, summary = "offline-rules", None
     if config.ai_enabled():
         try:
-            summary, _, engine = _ai_loop([], f"Settle job {job_id}.", SETTLE_SYSTEM, SETTLE_TOOLS, run, {}, max_steps=8)
+            summary, _, engine = _ai_loop([], f"Settle job {job_id}.", SETTLE_SYSTEM.format(mode_note=mode_note()), SETTLE_TOOLS, run, {}, max_steps=8)
         except GeminiUnavailable as e:
             engine = f"offline-rules (AI unavailable: {str(e)[:60]})"
     # Whatever the AI did or did not do, finish with the deterministic rule so a job never sits half-settled.

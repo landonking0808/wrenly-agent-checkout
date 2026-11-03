@@ -1,5 +1,5 @@
 {
-  "_note": "Wrenly Home price list. ONLY the 3-bed biweekly $179 row is Wrenly's published price; every other number in this file is a SAMPLE for the sandbox demo and is labeled as such.",
+  "_note": "Wrenly Home price list. ONLY the 3-bed biweekly $179 row is Wrenly's published price; every other number in this file is a SAMPLE for the demo and is labeled as such.",
   "currency": "USD",
   "market": "Peoria, IL",
   "published_prices": [{"bedrooms": 3, "frequency": "biweekly", "price": 179}],

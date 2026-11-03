@@ -263,3 +263,11 @@ def test_mock_responses_follow_documented_shapes(fresh):
     with pytest.raises(paypal.PayPalError) as e:
         fresh.capture_authorization(a["id"], 179, "inv", "r-cap-2")
     assert e.value.status == 422 and e.value.debug_id and e.value.body["details"][0]["issue"] == "AUTHORIZATION_ALREADY_CAPTURED"
+
+
+def test_agent_prompts_follow_runtime_paypal_mode(fresh):
+    from app import agent
+    assert "simulated by a local mock" in agent.mode_note() and "sandbox demo" not in agent.mode_note().lower()
+    assert "PayPal SANDBOX" not in agent.BOOKING_SYSTEM and "(sandbox)" not in agent.DEMO_CREW["name"]
+    paypal.set_client(paypal.RealPayPal("id", "secret", "https://api-m.sandbox.paypal.com"))
+    assert "PayPal sandbox" in agent.BOOKING_SYSTEM.format(mode_note=agent.mode_note())
