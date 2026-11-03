@@ -3,7 +3,7 @@ import sqlite3
 
 import pytest
 
-from app import config, db, money
+from app import config, db, money, paypal
 from conftest import book, full_checklist
 
 
@@ -216,3 +216,50 @@ def test_card_payment_source_authorizes_inline(fresh):
     o = money.create_order(jid, payment_source={"card": {"number": "4111111111111111", "expiry": "2030-12"}})
     j = db.job(jid)
     assert j["status"] == "authorized" and j["authorization_id"].startswith("MOCKAUTH") and o["order_id"] == j["order_id"]
+
+
+def test_mode_endpoint_and_banner_in_mock_mode(api):
+    from app.main import MOCK_BANNER
+    m = api.get("/api/mode").json()
+    assert m["paypal_mode"] == "mock" and m["mock"] is True and m["simulated_responses"] is True and m["real_money"] is False
+    assert m["banner"] == MOCK_BANNER and "local mock" in m["banner"] and "No real money moves" in m["banner"]
+    assert api.get("/api/config").json()["mode"]["mock"] is True
+    assert api.get("/healthz").json()["paypal_simulated"] is True
+    import html as _html
+    for p in ("/", "/ops", "/crew/anyjob"):
+        page = api.get(p).text
+        assert 'id="mode-banner"' in page and 'data-paypal-mode="mock"' in page and _html.escape(MOCK_BANNER) in page
+
+
+def test_banner_switches_when_sandbox_credentials_configured(api):
+    from app import paypal
+    from app.main import MOCK_BANNER, SANDBOX_BANNER
+    paypal.set_client(paypal.RealPayPal("id", "secret", "https://api-m.sandbox.paypal.com"))  # no network call is made
+    m = api.get("/api/mode").json()
+    assert m["paypal_mode"] == "sandbox" and m["mock"] is False and m["banner"] == SANDBOX_BANNER
+    page = api.get("/").text
+    assert "PayPal sandbox (live)" in page and 'data-paypal-mode="sandbox"' in page and MOCK_BANNER not in page
+
+
+def test_mock_responses_follow_documented_shapes(fresh):
+    o = fresh.create_order(179, "clean", "J1", "r-order")
+    assert o["status"] == "PAYER_ACTION_REQUIRED" and {l["rel"] for l in o["links"]} >= {"self", "payer-action"}
+    assert all({"href", "rel", "method"} <= set(l) for l in o["links"])
+    fresh.approve(o["id"])
+    assert fresh.get_order(o["id"])["status"] == "APPROVED"
+    a = fresh.authorize_order(o["id"], "r-auth")["purchase_units"][0]["payments"]["authorizations"][0]
+    assert a["status"] == "CREATED" and a["expiration_time"] and {l["rel"] for l in a["links"]} >= {"capture", "void"}
+    c = fresh.capture_authorization(a["id"], 179, "inv", "r-cap")
+    srb = c["seller_receivable_breakdown"]
+    assert c["status"] == "COMPLETED" and set(srb) == {"gross_amount", "paypal_fee", "net_amount"}
+    assert float(srb["gross_amount"]["value"]) - float(srb["paypal_fee"]["value"]) == pytest.approx(float(srb["net_amount"]["value"]))
+    r = fresh.refund_capture(c["id"], 20, "sorry", "r-ref")
+    assert r["status"] == "COMPLETED" and "capture_id" not in r and any(l["rel"] == "up" for l in r["links"])
+    p = fresh.create_payout("wrenly-J1-payout", "crew@example.com", 125.3, "pay", "J1-crew")
+    assert p["batch_header"]["batch_status"] == "PENDING" and p["batch_header"]["sender_batch_header"]["sender_batch_id"] == "wrenly-J1-payout"
+    g = fresh.get_payout(p["batch_header"]["payout_batch_id"])
+    assert g["batch_header"]["batch_status"] == "SUCCESS" and g["items"][0]["transaction_status"] == "SUCCESS"
+    assert g["items"][0]["payout_item"]["recipient_type"] == "EMAIL"
+    with pytest.raises(paypal.PayPalError) as e:
+        fresh.capture_authorization(a["id"], 179, "inv", "r-cap-2")
+    assert e.value.status == 422 and e.value.debug_id and e.value.body["details"][0]["issue"] == "AUTHORIZATION_ALREADY_CAPTURED"

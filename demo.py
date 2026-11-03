@@ -79,7 +79,7 @@ def book(api, text: str, follow: str, mock: bool, pause: float):
     step(pause)
     if mock:
         api.post(f"/api/mock/approve/{ev['order_id']}")
-        print(f"  {D}(mock) sandbox buyer clicks Pay with PayPal{X}")
+        print(f"  {D}(mock) buyer approval simulated by the local mock{X}")
     else:
         wait_for_approval(api, ev["order_id"], pause)
     jr = api.get(f"/api/jobs/{ev['job_id']}").json()
@@ -150,7 +150,7 @@ def main() -> None:
     p = a.pause
 
     print(f"{B}Wrenly Agent Checkout · end-to-end demo{X}")
-    print(f"{D}PayPal: {cfg['paypal_mode']} · AI: {cfg['ai']} · SANDBOX DEMO, no real money. Wrenly Home has not completed a paid job yet.{X}")
+    print(f"{D}PayPal: {cfg['paypal_mode']} · AI: {cfg['ai']} · DEMO, no real money (mock PayPal = simulated responses). Wrenly Home has not completed a paid job yet.{X}")
 
     say("1. A customer describes their home; the agent quotes it with a tool call")
     chat_id, job1 = book(api, "Hi! We have a 3 bedroom, 2 bath house in Peoria and want it cleaned every two weeks.",

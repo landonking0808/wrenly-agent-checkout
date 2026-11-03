@@ -44,3 +44,7 @@ input,textarea,select{font:inherit;color:var(--ink);border:1px solid var(--line-
 input:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(31,92,74,.12)}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r);box-shadow:var(--shadow);font-weight:500;opacity:0;transition:opacity .15s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
+.mode-banner{padding:9px 28px;font-size:13px;line-height:1.45;border-bottom:1px solid var(--line);background:var(--warn-bg);color:var(--warn);font-weight:500}
+.mode-banner.sandbox{background:var(--pp-bg);color:var(--pp)}
+.mode-banner.live{background:var(--bad-bg);color:var(--bad)}
+@media (max-width:640px){.mode-banner{padding:8px 16px;font-size:12px}}

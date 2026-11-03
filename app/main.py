@@ -1,12 +1,13 @@
 """HTTP API + pages. Run: uvicorn app.main:app --port 8000"""
 from __future__ import annotations
 
+import html
 import json
 import time
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -36,19 +37,45 @@ def _ops_auth(request: Request) -> None:
 
 # ---------------------------------------------------------------- pages
 
+MOCK_BANNER = ("Demo mode: PayPal API calls are answered by a local mock built to PayPal's documented REST shapes. "
+               "No real money moves. Add sandbox credentials to .env to run live.")
+SANDBOX_BANNER = "PayPal sandbox (live): calls go to the PayPal sandbox REST API with sandbox test money."
+LIVE_BANNER = "PayPal live: calls go to the PayPal production REST API and move real money."
+
+
+def paypal_mode_info() -> dict:
+    """What the app is talking to. 'mock' means every PayPal call is answered in-process with simulated responses."""
+    mode = client().mode
+    banner = {"mock": MOCK_BANNER, "sandbox": SANDBOX_BANNER, "live": LIVE_BANNER}.get(mode, "")
+    return {"paypal_mode": mode, "mock": mode == "mock", "simulated_responses": mode == "mock",
+            "real_money": mode == "live", "paypal_base": None if mode == "mock" else config.paypal_base(),
+            "banner": banner}
+
+
+def _page(name: str) -> HTMLResponse:
+    """Serve a page with the PayPal mode banner rendered in, so it shows even before (or without) JavaScript."""
+    info = paypal_mode_info()
+    cls = "mode-banner mock" if info["mock"] else f"mode-banner {info['paypal_mode']}"
+    banner = (f'<div class="{cls}" id="mode-banner" role="status" data-paypal-mode="{info["paypal_mode"]}">'
+              f'{html.escape(info["banner"])}</div>')
+    page = (STATIC / name).read_text()
+    page = page.replace("</header>", "</header>\n" + banner, 1)
+    return HTMLResponse(page)
+
+
 @app.get("/")
 def page_book():
-    return FileResponse(STATIC / "index.html")
+    return _page("index.html")
 
 
 @app.get("/ops")
 def page_ops():
-    return FileResponse(STATIC / "ops.html")
+    return _page("ops.html")
 
 
 @app.get("/crew/{job_id}")
 def page_crew(job_id: str):
-    return FileResponse(STATIC / "crew.html")
+    return _page("crew.html")
 
 
 # ---------------------------------------------------------------- api
@@ -62,8 +89,13 @@ def api_config():
         "currency": "USD", "checklist": pol["checklist"], "crew_share_pct": pol["crew_share_pct"], "crew_extra_hour_rate": pol["crew_extra_hour_rate"],
         "margin_floor": {"abs": pol["margin_floor_abs"], "pct": pol["margin_floor_pct"]},
         "caps": {k: pol[k] for k in ("max_order_amount", "max_payout_amount", "max_refund_amount")},
-        "pricing": config.pricing(), "version": __version__,
+        "pricing": config.pricing(), "version": __version__, "mode": paypal_mode_info(),
     }
+
+
+@app.get("/api/mode")
+def api_mode():
+    return paypal_mode_info()
 
 
 class ChatIn(BaseModel):
@@ -249,4 +281,4 @@ def api_reset(request: Request):
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "paypal": client().mode, "ai": config.ai_enabled()}
+    return {"ok": True, "paypal": client().mode, "paypal_simulated": client().mode == "mock", "ai": config.ai_enabled()}

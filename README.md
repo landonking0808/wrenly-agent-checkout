@@ -2,7 +2,14 @@
 
 **An AI agent that runs the money side of a two-sided home-cleaning marketplace on PayPal:** it quotes the clean from a chat, takes payment with PayPal (authorize now, capture after the clean), pays the cleaning crew its share with PayPal Payouts after a margin check, and proposes refunds that a person approves. The AI decides what to try; code-level guardrails decide what is allowed.
 
-> **Sandbox demo.** Everything here runs on the PayPal sandbox (or a built-in mock). Wrenly Home is a real, early-stage cleaning marketplace in Peoria, Illinois, started October 21, 2026. It has **not completed a paid job yet**; every job, customer and payment in this repo and its screenshots is test data.
+## Demo mode (read this first)
+
+- **What the code does.** The app calls the PayPal **Orders v2, Payments v2 and Payouts v1** REST APIs (plus OAuth and webhook signature verification), built to PayPal's documented request and response shapes. The real client is `RealPayPal` in [`app/paypal.py`](app/paypal.py).
+- **What the demo, the screenshots and the video run on.** Every PayPal call is answered by a **local mock** (`MockPayPal` in the same file) that returns those documented shapes: ids, status values, `links` arrays, payout `batch_header`, error bodies with `debug_id`. These are **simulated responses**. No request reaches PayPal, **no real money moves**, and it is **not the PayPal sandbox**. Mock ids start with `MOCK` so they cannot be mistaken for PayPal ids.
+- **This app has not yet been run against the PayPal sandbox.** Every page shows a banner saying which mode is active, and `GET /api/mode` reports it (`"paypal_mode": "mock"`, `"simulated_responses": true`).
+- **To run it live against the PayPal sandbox,** put a sandbox client id and secret in `.env` (`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `CREW_PAYPAL_EMAIL`; see [How to get PayPal sandbox credentials](#how-to-get-paypal-sandbox-credentials)), restart, and the banner switches to "PayPal sandbox (live)". [`scripts/sandbox_e2e.py`](#real-paypal-sandbox-run-api-only) checks the keys with `--preflight` (moves no money) and then runs the whole flow end to end.
+
+Wrenly Home is a real, early-stage cleaning marketplace in Peoria, Illinois, started October 21, 2026. It has **not completed a paid job yet**; every job, customer and payment in this repo and its screenshots is test data.
 
 Built by **Landon King, built with King AI** (King AI is an autonomous AI agent that can do anything a person can do on a computer). Significantly new: **built in October 2026** for the PayPal AI Hackathon.
 
@@ -52,14 +59,14 @@ All in [`app/money.py`](app/money.py), the only module that talks to PayPal. Val
 ```mermaid
 flowchart LR
     C["Customer<br/>booking page"] -->|"chat"| BA["Booking agent<br/>Gemini function calling<br/>or offline rules"]
-    C -->|"PayPal JS SDK buttons"| PPB[("PayPal sandbox<br/>buyer approval")]
+    C -->|"PayPal JS SDK buttons<br/>(mock button in demo mode)"| PPB[("PayPal buyer approval")]
     CR["Crew page<br/>checklist"] -->|"mark done"| SA["Settlement agent<br/>Gemini function calling<br/>+ deterministic finish"]
     BA -->|"quote_cleaning, start_checkout,<br/>booking_status, propose_refund"| T["Agent tools"]
     SA -->|"capture_payment, check_margin,<br/>send_crew_payout, hold_payout_for_review"| T
     T --> P["pricing.py<br/>config/pricing.json"]
     T --> M["money.py GUARDRAILS<br/>caps, margin rule, checklist,<br/>human approval, idempotency"]
     OPS["Ops dashboard<br/>human approvals"] -->|"approve or reject"| M
-    M -->|"PayPal-Request-Id,<br/>sender_batch_id"| PP["PayPal REST<br/>Orders v2, Payments v2,<br/>Payouts v1, Webhooks"]
+    M -->|"PayPal-Request-Id,<br/>sender_batch_id"| PP["PayPal REST<br/>Orders v2, Payments v2,<br/>Payouts v1, Webhooks<br/>(local mock in demo mode)"]
     M --> L[("SQLite ledger<br/>append-only + ledger.jsonl")]
     PP -.->|"webhooks"| W["api/webhooks/paypal<br/>signature verify"]
     W --> L
@@ -74,13 +81,13 @@ app/
   pricing.py   quotes from config/pricing.json
   margin.py    the margin rule
   money.py     the guarded money layer: the only code that calls PayPal
-  paypal.py    PayPal REST client + a faithful in-memory mock (MOCK_PAYPAL=1)
+  paypal.py    PayPal REST client + an in-memory mock built to PayPal's documented shapes (default with no keys)
   db.py        SQLite: jobs, approvals, chats, webhook events, append-only ledger
 static/        booking page, crew page, ops dashboard (plain HTML/CSS/JS)
 config/        pricing.json (price list), policy.json (money rules)
 tests/         pytest suite (mock PayPal, offline AI)
 demo.py        scripted end-to-end walkthrough for the video
-scripts/       sandbox_e2e.py (real sandbox run), screenshots.py (headless UI capture)
+scripts/       sandbox_e2e.py (sandbox run, needs your sandbox keys), screenshots.py (headless UI capture)
 ```
 
 ## PayPal APIs used
@@ -121,7 +128,7 @@ git clone https://github.com/landonking0808/wrenly-agent-checkout.git && cd wren
 - Ops dashboard: http://localhost:8000/ops
 - Crew page: linked from the booking page and from each job in the dashboard (`/crew/<job id>`)
 
-With an empty `.env` it runs with **mock PayPal + offline AI**, so you can click through everything immediately. Add keys to `.env` to go live on the sandbox:
+With an empty `.env` it runs in **demo mode: mock PayPal (simulated responses, no real money) + offline AI**, so you can click through everything immediately. Add keys to `.env` to run live against the PayPal sandbox:
 
 ```ini
 PAYPAL_CLIENT_ID=...          # sandbox app
@@ -153,6 +160,8 @@ Covers quote extraction (offline), the price table, the margin rule, idempotency
 
 ### Real PayPal sandbox run (API only)
 
+Not run yet for this submission (no sandbox app was available); this is how to run it with your own sandbox keys.
+
 ```bash
 .venv/bin/pip install playwright && .venv/bin/playwright install chromium   # only for the headless buyer approval
 PAYPAL_CLIENT_ID=... PAYPAL_CLIENT_SECRET=... CREW_PAYPAL_EMAIL=... \
@@ -170,18 +179,13 @@ It runs order → buyer approval (headless sandbox login, or a sandbox test card
 3. In the app's features, keep **Payouts** enabled (needed for crew pay). Optional: add a **Webhook** pointing to `<your public url>/api/webhooks/paypal` and put its id in `PAYPAL_WEBHOOK_ID`.
 4. Under **Testing Tools → Sandbox Accounts** you have a default *Personal* (buyer) and *Business* (merchant) account. Use the Personal account to approve checkout, and a Personal account email as `CREW_PAYPAL_EMAIL` to receive payouts. Passwords: account's **⋯ → View/Edit account**.
 
-## Sandbox test credentials
+## Sandbox test accounts
 
-For judges: these sandbox-only accounts can be used to approve a checkout on the hosted demo. They hold no real money.
-
-| Role | Email | Password |
-|---|---|---|
-| Sandbox buyer (Personal) | `<to be filled>` | `<to be filled>` |
-| Sandbox crew payout receiver (Personal) | `<to be filled>` | n/a |
+None are published: the demo runs on the local mock. To try the live sandbox flow, use the default Personal (buyer) and Business (merchant) accounts that PayPal creates in your own developer dashboard (step 4 above).
 
 ## Screenshots
 
-All in [`docs/screenshots/`](docs/screenshots/) (captured headless from the running app with `scripts/screenshots.py`, mock PayPal + Gemini):
+All in [`docs/screenshots/`](docs/screenshots/) (captured headless from the running app with `scripts/screenshots.py`, in demo mode: mock PayPal, simulated responses:
 
 | | |
 |---|---|
@@ -191,7 +195,7 @@ All in [`docs/screenshots/`](docs/screenshots/) (captured headless from the runn
 
 ## Honest limits
 
-- Sandbox only. Moving to live needs a live PayPal business account approved for Payouts, real crew onboarding (Wrenly has signed no crews yet) and a tax/1099 flow.
+- Demo mode only so far: every PayPal response in the demo, screenshots and video comes from the local mock, not from PayPal. The sandbox path is coded and preflight-tested against a fake HTTP layer but has not been run against the real sandbox. Moving to production needs a live PayPal business account approved for Payouts, real crew onboarding (Wrenly has signed no crews yet) and a tax/1099 flow.
 - Only the 3-bedroom biweekly **$179** price is Wrenly's published price. Every other price in `config/pricing.json` is a labeled **sample** for the demo.
 - PayPal fee figures in the margin rule are estimates from `config/policy.json`; the capture response's actual `paypal_fee` is recorded in the ledger.
 - The ops dashboard has an optional shared token (`OPS_TOKEN`) rather than full user accounts.

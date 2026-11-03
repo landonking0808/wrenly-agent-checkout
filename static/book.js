@@ -88,7 +88,7 @@ async function showCheckout(ev) {
   area.dataset.state = "checkout";
   if (CFG.paypal_mode === "mock") {
     area.innerHTML = `<button class="mockpp" id="mockpp">Pay with <i>PayPal</i></button>
-      <p class="note">MOCK_PAYPAL mode: this button stands in for the PayPal sandbox popup. Set PayPal sandbox keys to use the real PayPal JS SDK buttons.</p>`;
+      <p class="note">Demo mode: this button stands in for the PayPal approval popup and is answered by the local mock (simulated, no real money). Add PayPal sandbox keys to .env to use the real PayPal JS SDK buttons.</p>`;
     $("#mockpp").onclick = async () => {
       $("#mockpp").disabled = true;
       try { await api(`/api/mock/approve/${ORDER}`, {method: "POST"}); await authorize(ORDER); }
