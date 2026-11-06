@@ -90,28 +90,41 @@ demo.py        scripted end-to-end walkthrough for the video
 scripts/       sandbox_e2e.py (sandbox run, needs your sandbox keys), screenshots.py (headless UI capture)
 ```
 
-## PayPal APIs used
+## How it uses AI
+
+- **Model:** Google **Gemini** through the REST `generateContent` API with function calling (`functionDeclarations`, `functionCallingConfig: AUTO`), in [`app/gemini.py`](app/gemini.py) `generate()`. Default **`gemini-3.5-flash`**, falling back to `gemini-2.5-flash` and then `gemini-3.1-flash-lite` on a rate limit, overload or error (`config.gemini_models()`, override with `GEMINI_MODEL`). The tool loop is `agent._ai_loop()`: the model asks for a function, the app runs it and sends the result back, up to 6 steps (8 for settlement).
+- **Booking agent** ([`app/agent.py`](app/agent.py) `booking_turn()`, `BOOKING_TOOLS`), behind `POST /api/chat`. It reads the customer's description and decides which tools to call and with what arguments:
+  - `quote_cleaning(bedrooms, bathrooms, frequency, add_ons)`: prices the home from [`config/pricing.json`](config/pricing.json); the model never makes up a price.
+  - `start_checkout(customer_name, customer_email, address, service_date)`: creates the job and a PayPal order (`intent: AUTHORIZE`) for the server-side quote (`money.create_order`).
+  - `booking_status()`: reads the job and its PayPal ids.
+  - `propose_refund(category, reasoning, amount)`: after a complaint, picks a policy category and proposes an amount (`money.propose_refund`). It cannot pay a refund.
+  The authorization itself is not an AI tool: the customer approves in the PayPal window and the page calls `POST /api/orders/{id}/authorize` (`money.authorize`).
+- **Settlement agent** (`agent.settle()`, `SETTLE_TOOLS`), run when the crew marks a job done (`POST /api/jobs/{id}/complete`). It decides the order of `get_job`, `capture_payment` (`money.capture`), `check_margin` (`money.check_margin`), and then either `send_crew_payout` (`money.send_payout`) or `hold_payout_for_review(reason)` (`money.hold_payout`) with a reason a manager can act on, and writes a summary citing the PayPal ids.
+- **Guardrails in code, not in the prompt** ([`app/money.py`](app/money.py)): the order amount must equal the server-side quote and stay under the cap; capture only after a complete crew checklist; payout only after capture and a passing margin rule (else refused and logged `blocked`); refunds are only proposed and must be approved by a person (`money.decide` refuses the decider `agent`); deterministic `PayPal-Request-Id`/`sender_batch_id` plus a ledger check so a retry never charges or pays twice. A wrong or adversarial tool call is refused, never executed. After the AI finishes, a deterministic rule completes any settlement the AI left half done.
+- **Offline fallback:** with no `GEMINI_API_KEY` (or `WRENLY_OFFLINE_AI=1`), or if every model fails for a turn, a deterministic rules engine ([`app/extract.py`](app/extract.py), `agent._offline_booking_reply()`) calls the same tools. Every response reports its `engine`: `gemini:<model>` or `offline-rules`. The tests run offline.
+- **Evidence of a real Gemini run:** [`docs/evidence/ai-run-2026-11-06.json`](docs/evidence/ai-run-2026-11-06.json), recorded with [`scripts/ai_evidence.py`](scripts/ai_evidence.py) through the app's own HTTP API (PayPal in mock mode). It lists every Gemini call, the model that answered and the functions it asked for: quote → checkout → capture → margin check → payout for one job, a refund proposal after a complaint, and a held payout for a job that failed the margin rule. No API key is stored in it.
+- King AI (an autonomous AI agent) wrote most of this code, directed and reviewed by Landon King.
+
+## How it uses PayPal
+
+All PayPal calls are in [`app/paypal.py`](app/paypal.py) (`RealPayPal`), and only [`app/money.py`](app/money.py) calls them.
 
 | API | Endpoint | Where |
 |---|---|---|
-| OAuth 2.0 | `POST /v1/oauth2/token` | `paypal.py` `RealPayPal.token` |
+| OAuth 2.0 | `POST /v1/oauth2/token` | `RealPayPal.token` |
 | Orders v2 | `POST /v2/checkout/orders` (`intent: AUTHORIZE`, `PayPal-Request-Id`) | `money.create_order` |
-| Orders v2 | `GET /v2/checkout/orders/{id}` | `/api/orders/{id}`, demo + sandbox script |
+| Orders v2 | `GET /v2/checkout/orders/{id}` | `GET /api/orders/{id}`, `scripts/sandbox_e2e.py` |
 | Orders v2 | `POST /v2/checkout/orders/{id}/authorize` | `money.authorize` |
 | Payments v2 | `POST /v2/payments/authorizations/{id}/capture` | `money.capture` |
 | Payments v2 | `POST /v2/payments/authorizations/{id}/void` | `money.void` (cancel before the clean) |
 | Payments v2 | `POST /v2/payments/captures/{id}/refund` | `money.execute_refund` (after human approval) |
 | Payouts v1 | `POST /v1/payments/payouts` (`sender_batch_id`) | `money.send_payout` |
-| Payouts v1 | `GET /v1/payments/payouts/{batch_id}` | sandbox script status check |
-| Webhooks | `POST /v1/notifications/verify-webhook-signature` | `/api/webhooks/paypal` |
+| Payouts v1 | `GET /v1/payments/payouts/{batch_id}` | `scripts/sandbox_e2e.py` status check |
+| Webhooks | `POST /v1/notifications/verify-webhook-signature` | `POST /api/webhooks/paypal` |
 | JS SDK | `paypal.Buttons` with `intent=authorize` | `static/book.js` |
 
-## AI used
-
-- **Google Gemini** via REST (`generateContent` with `functionDeclarations`), default model **`gemini-3.5-flash`**, falling back to `gemini-2.5-flash` and `gemini-3.1-flash-lite` when a model is overloaded or rate-limited (`GEMINI_MODEL` to change).
-- Two agents, both with real function calling: the **booking agent** (4 tools) and the **settlement agent** (5 tools). The model's tool calls run through `money.py`, so a wrong or adversarial call is refused and logged as `blocked`, never executed.
-- **Offline mode:** with no `GEMINI_API_KEY` (or `WRENLY_OFFLINE_AI=1`) a deterministic rules engine (`extract.py`) does the same job with the same tools, so the app, the demo and the tests all run without any AI key. If Gemini errors mid-conversation, that turn falls back to offline rules and the UI shows which engine answered.
-- King AI (an autonomous AI agent) wrote most of this code, directed and reviewed by Landon King.
+- **Base URL:** `config.paypal_base()` uses `https://api-m.sandbox.paypal.com` by default; `PAYPAL_ENV=live` switches to `https://api-m.paypal.com`.
+- **Mock vs real:** with no `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` (or `MOCK_PAYPAL=1`), `paypal.client()` returns `MockPayPal`. Until sandbox keys are set, the demo runs against a local mock that mirrors PayPal's documented responses; this app has not yet been run against the PayPal sandbox. See [Demo mode](#demo-mode-read-this-first).
 
 ## Setup and run (one command)
 

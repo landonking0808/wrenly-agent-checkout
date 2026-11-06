@@ -1,0 +1,649 @@
+{
+  "recorded_at_ct": "Fri Nov 6 2026 12:02:34 PM CST",
+  "what": "Real Google Gemini function-calling run of both agents through the app's HTTP API (FastAPI TestClient).",
+  "paypal": "MOCK (local MockPayPal, simulated responses; no request reached PayPal, not the sandbox, no money moved)",
+  "gemini_models_configured": [
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-3.1-flash-lite"
+  ],
+  "models_that_answered": [
+    "gemini-2.5-flash",
+    "gemini-3.5-flash"
+  ],
+  "gemini_calls": 20,
+  "model_function_calls": [
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "quote_cleaning",
+          "args": {
+            "bathrooms": 2,
+            "frequency": "biweekly",
+            "bedrooms": 3,
+            "add_ons": [
+              "pets"
+            ]
+          }
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "Your biweekly cleaning for a 3-bedroom, 2-bathroom home comes out to **$194 per visit**. That covers our $179 biweekly base rate plus $15 for pet hair treatment.\n\nWould you like to move forward and book a date for your first clean?"
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "start_checkout",
+          "args": {
+            "customer_name": "Jordan Demo",
+            "customer_email": "jordan@example.com"
+          }
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "Great, I've set up your booking! You can complete the checkout process using the PayPal buttons on your screen. \n\nYour card is only authorized right now\u2014you won't be charged until after your clean is completed and inspected. Thank you for choosing Wrenly!"
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "get_job",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "capture_payment",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "check_margin",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "send_crew_payout",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "Payment for job job_180f0fbc5c was successfully captured under PayPal authorization MOCKAUTH55040DC3C with capture ID MOCKCAP55768C5887. Following a successful margin check, the crew payout of $135.80 was processed under payout batch ID MOCKBATCH81CE85F7."
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "propose_refund",
+          "args": {
+            "category": "missed_area",
+            "reasoning": "The crew skipped the guest bathroom entirely during the clean."
+          }
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "I am so sorry to hear the guest bathroom was missed! I've submitted a refund proposal for **$29.10** under our missed area policy. \n\nA member of the Wrenly team personally reviews and approves every refund proposal, so someone will follow up with you shortly once it's processed. Thank you for letting us know and bringing this to our attention!"
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "quote_cleaning",
+          "args": {
+            "frequency": "one_time",
+            "bathrooms": 1,
+            "add_ons": [
+              "deep_clean"
+            ],
+            "bedrooms": 2
+          }
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "That comes to $269 total: $189 for a one-time 2-bedroom clean plus $80 for the deep clean add-on.\n\nWould you like to go ahead and book this clean?"
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "start_checkout",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "booking",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "You're all set! You'll see the PayPal buttons below to complete checkout. \n\nPlease note that your payment method is only authorized right now\u2014you'll only be charged after your clean is completed and checked to make sure you're completely happy."
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "get_job",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "capture_payment",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [
+        {
+          "name": "check_margin",
+          "args": {}
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-2.5-flash",
+      "function_calls": [
+        {
+          "name": "hold_payout_for_review",
+          "args": {
+            "reason": "The margin of $-41.43 is below the floor of $26.90."
+          }
+        }
+      ],
+      "text": ""
+    },
+    {
+      "agent": "settlement",
+      "model": "gemini-3.5-flash",
+      "function_calls": [],
+      "text": "Payment for job_68f8ee1a66 was captured under authorization ID MOCKAUTH824A7197D resulting in capture ID MOCKCAPA1016B6CF6. The crew payout has been held for review because the calculated margin of -$41.43 is below the required floor of $26.90."
+    }
+  ],
+  "turns": [
+    {
+      "endpoint": "POST /api/chat",
+      "customer": "Hi! We have a 3 bedroom, 2 bathroom house and would like a cleaning every two weeks. We have a dog.",
+      "engine": "gemini:gemini-3.5-flash",
+      "reply": "Your biweekly cleaning for a 3-bedroom, 2-bathroom home comes out to **$194 per visit**. That covers our $179 biweekly base rate plus $15 for pet hair treatment.\n\nWould you like to move forward and book a date for your first clean?",
+      "tool_results": [
+        {
+          "name": "quote_cleaning",
+          "args": {
+            "bathrooms": 2,
+            "frequency": "biweekly",
+            "bedrooms": 3,
+            "add_ons": [
+              "pets"
+            ]
+          },
+          "result": {
+            "total": 194.0,
+            "lines": [
+              {
+                "label": "3-bedroom home, every two weeks (includes 2 bath)",
+                "amount": 179.0
+              },
+              {
+                "label": "Pet hair treatment",
+                "amount": 15.0
+              }
+            ],
+            "frequency": "biweekly",
+            "published_price": true,
+            "explanation": "$179 3-bedroom home, every two weeks (includes 2 bath) + $15 Pet hair treatment = $194.00. Base rate from Wrenly's published price; regular visits cost less per visit than a one-time clean because the home stays maintained."
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "POST /api/chat",
+      "customer": "Sounds good, please book it. I'm Jordan Demo, jordan@example.com.",
+      "engine": "gemini:gemini-3.5-flash",
+      "reply": "Great, I've set up your booking! You can complete the checkout process using the PayPal buttons on your screen. \n\nYour card is only authorized right now\u2014you won't be charged until after your clean is completed and inspected. Thank you for choosing Wrenly!",
+      "tool_results": [
+        {
+          "name": "start_checkout",
+          "args": {
+            "customer_name": "Jordan Demo",
+            "customer_email": "jordan@example.com"
+          },
+          "result": {
+            "job_id": "job_180f0fbc5c",
+            "order_id": "MOCKORDE7A6524469",
+            "amount": 194.0,
+            "next": "customer approves in the PayPal window"
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "POST /api/orders/{id}/authorize",
+      "status": 200,
+      "result": {
+        "authorization_id": "MOCKAUTH55040DC3C",
+        "status": "CREATED"
+      }
+    },
+    {
+      "endpoint": "POST /api/jobs/{id}/complete",
+      "engine": "gemini:gemini-3.5-flash",
+      "summary": "Payment for job job_180f0fbc5c was successfully captured under PayPal authorization MOCKAUTH55040DC3C with capture ID MOCKCAP55768C5887. Following a successful margin check, the crew payout of $135.80 was processed under payout batch ID MOCKBATCH81CE85F7.",
+      "steps": [
+        {
+          "tool": "get_job",
+          "args": {},
+          "result": {
+            "id": "job_180f0fbc5c",
+            "status": "completed",
+            "list_price": 194.0,
+            "crew_name": "Peoria Crew A (demo)",
+            "extra_hours": 0.0,
+            "authorization_id": "MOCKAUTH55040DC3C",
+            "capture_id": null
+          }
+        },
+        {
+          "tool": "capture_payment",
+          "args": {},
+          "result": {
+            "capture_id": "MOCKCAP55768C5887",
+            "amount": 194.0,
+            "status": "COMPLETED"
+          }
+        },
+        {
+          "tool": "check_margin",
+          "args": {},
+          "result": {
+            "list_price": 194.0,
+            "captured": 194.0,
+            "refunded": 0.0,
+            "net_revenue": 194.0,
+            "crew_pay": 135.8,
+            "extra_hours": 0,
+            "paypal_fee_est": 7.26,
+            "payout_fee_est": 0.25,
+            "margin": 50.69,
+            "margin_pct": 26.13,
+            "floor": 19.4,
+            "ok": true,
+            "reasons": []
+          }
+        },
+        {
+          "tool": "send_crew_payout",
+          "args": {},
+          "result": {
+            "payout_batch_id": "MOCKBATCH81CE85F7",
+            "amount": 135.8,
+            "batch_status": "PENDING"
+          }
+        }
+      ],
+      "job_status": "paid_out"
+    },
+    {
+      "endpoint": "POST /api/chat",
+      "customer": "The crew skipped the guest bathroom entirely. Not happy about that.",
+      "engine": "gemini:gemini-3.5-flash",
+      "reply": "I am so sorry to hear the guest bathroom was missed! I've submitted a refund proposal for **$29.10** under our missed area policy. \n\nA member of the Wrenly team personally reviews and approves every refund proposal, so someone will follow up with you shortly once it's processed. Thank you for letting us know and bringing this to our attention!",
+      "tool_results": [
+        {
+          "name": "propose_refund",
+          "args": {
+            "category": "missed_area",
+            "reasoning": "The crew skipped the guest bathroom entirely during the clean."
+          },
+          "result": {
+            "approval_id": "apr_ccf93ca38a",
+            "amount": 29.1,
+            "status": "pending_human_approval",
+            "policy_amount": 29.1,
+            "policy": "One room or area missed"
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "GET /api/approvals?status=pending",
+      "pending": [
+        {
+          "id": "apr_ccf93ca38a",
+          "kind": "refund",
+          "amount": 29.1,
+          "reason": "The crew skipped the guest bathroom entirely during the clean.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "endpoint": "POST /api/chat",
+      "customer": "2 bed 1 bath, one time deep clean please.",
+      "engine": "gemini:gemini-3.5-flash",
+      "reply": "That comes to $269 total: $189 for a one-time 2-bedroom clean plus $80 for the deep clean add-on.\n\nWould you like to go ahead and book this clean?",
+      "tool_results": [
+        {
+          "name": "quote_cleaning",
+          "args": {
+            "frequency": "one_time",
+            "bathrooms": 1,
+            "add_ons": [
+              "deep_clean"
+            ],
+            "bedrooms": 2
+          },
+          "result": {
+            "total": 269.0,
+            "lines": [
+              {
+                "label": "2-bedroom home, one-time (includes 1.5 bath)",
+                "amount": 189.0
+              },
+              {
+                "label": "First-visit deep clean",
+                "amount": 80.0
+              }
+            ],
+            "frequency": "one_time",
+            "published_price": false,
+            "explanation": "$189 2-bedroom home, one-time (includes 1.5 bath) + $80 First-visit deep clean = $269.00. Base rate from the sample price table (demo); regular visits cost less per visit than a one-time clean because the home stays maintained."
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "POST /api/chat",
+      "customer": "Yes, book it.",
+      "engine": "gemini:gemini-3.5-flash",
+      "reply": "You're all set! You'll see the PayPal buttons below to complete checkout. \n\nPlease note that your payment method is only authorized right now\u2014you'll only be charged after your clean is completed and checked to make sure you're completely happy.",
+      "tool_results": [
+        {
+          "name": "start_checkout",
+          "args": {},
+          "result": {
+            "job_id": "job_68f8ee1a66",
+            "order_id": "MOCKORD33FD34741E",
+            "amount": 269.0,
+            "next": "customer approves in the PayPal window"
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "POST /api/jobs/{id}/complete (4 extra hours)",
+      "engine": "gemini:gemini-3.5-flash",
+      "summary": "Payment for job_68f8ee1a66 was captured under authorization ID MOCKAUTH824A7197D resulting in capture ID MOCKCAPA1016B6CF6. The crew payout has been held for review because the calculated margin of -$41.43 is below the required floor of $26.90.",
+      "steps": [
+        {
+          "tool": "get_job",
+          "args": {},
+          "result": {
+            "id": "job_68f8ee1a66",
+            "status": "completed",
+            "list_price": 269.0,
+            "crew_name": "Peoria Crew A (demo)",
+            "extra_hours": 4.0,
+            "authorization_id": "MOCKAUTH824A7197D",
+            "capture_id": null
+          }
+        },
+        {
+          "tool": "capture_payment",
+          "args": {},
+          "result": {
+            "capture_id": "MOCKCAPA1016B6CF6",
+            "amount": 269.0,
+            "status": "COMPLETED"
+          }
+        },
+        {
+          "tool": "check_margin",
+          "args": {},
+          "result": {
+            "list_price": 269.0,
+            "captured": 269.0,
+            "refunded": 0.0,
+            "net_revenue": 269.0,
+            "crew_pay": 300.3,
+            "extra_hours": 4.0,
+            "paypal_fee_est": 9.88,
+            "payout_fee_est": 0.25,
+            "margin": -41.43,
+            "margin_pct": -15.4,
+            "floor": 26.9,
+            "ok": false,
+            "reasons": [
+              "margin $-41.43 is below the floor $26.90"
+            ]
+          }
+        },
+        {
+          "tool": "hold_payout_for_review",
+          "args": {
+            "reason": "The margin of $-41.43 is below the floor of $26.90."
+          },
+          "result": {
+            "approval_id": "apr_a84dc2708e",
+            "status": "pending"
+          }
+        }
+      ],
+      "job_status": "payout_held"
+    }
+  ],
+  "ledger": [
+    {
+      "seq": 15,
+      "action": "payout.hold",
+      "status": "pending_approval",
+      "job_id": "job_68f8ee1a66",
+      "amount": 300.3,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    },
+    {
+      "seq": 14,
+      "action": "margin.check",
+      "status": "fail",
+      "job_id": "job_68f8ee1a66",
+      "amount": -41.43,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    },
+    {
+      "seq": 13,
+      "action": "payment.capture",
+      "status": "ok",
+      "job_id": "job_68f8ee1a66",
+      "amount": 269.0,
+      "paypal_id": "MOCKCAPA1016B6CF6",
+      "request_id": "wrenly-job_68f8ee1a66-capture",
+      "actor": "agent"
+    },
+    {
+      "seq": 12,
+      "action": "job.complete",
+      "status": "ok",
+      "job_id": "job_68f8ee1a66",
+      "amount": null,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "crew"
+    },
+    {
+      "seq": 11,
+      "action": "order.authorize",
+      "status": "ok",
+      "job_id": "job_68f8ee1a66",
+      "amount": 269.0,
+      "paypal_id": "MOCKAUTH824A7197D",
+      "request_id": "wrenly-job_68f8ee1a66-authorize",
+      "actor": "customer"
+    },
+    {
+      "seq": 10,
+      "action": "order.create",
+      "status": "ok",
+      "job_id": "job_68f8ee1a66",
+      "amount": 269.0,
+      "paypal_id": "MOCKORD33FD34741E",
+      "request_id": "wrenly-job_68f8ee1a66-order",
+      "actor": "agent"
+    },
+    {
+      "seq": 9,
+      "action": "job.create",
+      "status": "ok",
+      "job_id": "job_68f8ee1a66",
+      "amount": 269.0,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    },
+    {
+      "seq": 8,
+      "action": "refund.propose",
+      "status": "pending_approval",
+      "job_id": "job_180f0fbc5c",
+      "amount": 29.1,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    },
+    {
+      "seq": 7,
+      "action": "payout.send",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": 135.8,
+      "paypal_id": "MOCKBATCH81CE85F7",
+      "request_id": "wrenly-job_180f0fbc5c-payout",
+      "actor": "agent"
+    },
+    {
+      "seq": 6,
+      "action": "margin.check",
+      "status": "pass",
+      "job_id": "job_180f0fbc5c",
+      "amount": 50.69,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    },
+    {
+      "seq": 5,
+      "action": "payment.capture",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": 194.0,
+      "paypal_id": "MOCKCAP55768C5887",
+      "request_id": "wrenly-job_180f0fbc5c-capture",
+      "actor": "agent"
+    },
+    {
+      "seq": 4,
+      "action": "job.complete",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": null,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "crew"
+    },
+    {
+      "seq": 3,
+      "action": "order.authorize",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": 194.0,
+      "paypal_id": "MOCKAUTH55040DC3C",
+      "request_id": "wrenly-job_180f0fbc5c-authorize",
+      "actor": "customer"
+    },
+    {
+      "seq": 2,
+      "action": "order.create",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": 194.0,
+      "paypal_id": "MOCKORDE7A6524469",
+      "request_id": "wrenly-job_180f0fbc5c-order",
+      "actor": "agent"
+    },
+    {
+      "seq": 1,
+      "action": "job.create",
+      "status": "ok",
+      "job_id": "job_180f0fbc5c",
+      "amount": 194.0,
+      "paypal_id": null,
+      "request_id": null,
+      "actor": "agent"
+    }
+  ],
+  "api_key": "not recorded"
+}
