@@ -28,6 +28,11 @@ def env(name: str, default: str = "") -> str:
     return os.environ.get(name, default)
 
 
+def sb_buttons_client_id() -> str:
+    """Client id for the JS SDK in mock mode: PayPal's documented `sb` test shortcut, unless PAYPAL_SB_BUTTONS=0."""
+    return "" if env("PAYPAL_SB_BUTTONS", "1").lower() in ("0", "false", "no") else "sb"
+
+
 def mock_paypal() -> bool:
     if env("MOCK_PAYPAL"):
         return env("MOCK_PAYPAL") not in ("0", "false", "no")

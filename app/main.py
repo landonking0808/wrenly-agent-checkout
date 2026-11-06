@@ -85,6 +85,9 @@ def api_config():
     pol = config.policy()
     return {
         "paypal_mode": client().mode, "paypal_client_id": "" if config.mock_paypal() else config.env("PAYPAL_CLIENT_ID"),
+        # Mock mode: the page still loads PayPal's real JS SDK buttons through PayPal's documented `client-id=sb`
+        # test shortcut (PayPal's shared sandbox test merchant, no account of ours). Server-side calls stay on the mock.
+        "paypal_sdk_client_id": config.sb_buttons_client_id() if config.mock_paypal() else config.env("PAYPAL_CLIENT_ID"),
         "ai": f"gemini ({config.gemini_models()[0]})" if config.ai_enabled() else "offline rules",
         "currency": "USD", "checklist": pol["checklist"], "crew_share_pct": pol["crew_share_pct"], "crew_extra_hour_rate": pol["crew_extra_hour_rate"],
         "margin_floor": {"abs": pol["margin_floor_abs"], "pct": pol["margin_floor_pct"]},

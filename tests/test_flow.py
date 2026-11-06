@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -271,3 +272,27 @@ def test_agent_prompts_follow_runtime_paypal_mode(fresh):
     assert "PayPal SANDBOX" not in agent.BOOKING_SYSTEM and "(sandbox)" not in agent.DEMO_CREW["name"]
     paypal.set_client(paypal.RealPayPal("id", "secret", "https://api-m.sandbox.paypal.com"))
     assert "PayPal sandbox" in agent.BOOKING_SYSTEM.format(mode_note=agent.mode_note())
+
+
+def test_mock_mode_uses_paypal_sb_test_shortcut_for_js_sdk(api, monkeypatch):
+    c = api.get("/api/config").json()
+    assert c["paypal_mode"] == "mock" and c["paypal_client_id"] == "" and c["paypal_sdk_client_id"] == "sb"
+    monkeypatch.setenv("PAYPAL_SB_BUTTONS", "0")
+    assert api.get("/api/config").json()["paypal_sdk_client_id"] == ""
+
+
+def test_sandbox_keys_use_own_client_id_not_sb(api, monkeypatch):
+    monkeypatch.setenv("MOCK_PAYPAL", "0")
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "my-sandbox-client")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "secret")
+    c = api.get("/api/config").json()
+    assert c["paypal_client_id"] == "my-sandbox-client" and c["paypal_sdk_client_id"] == "my-sandbox-client"
+
+
+def test_checkout_page_keeps_mock_fallback_with_sb_buttons():
+    js = (Path(__file__).resolve().parent.parent / "static" / "book.js").read_text()
+    # sb buttons create their own client-side order (PayPal rejects the mock id) and fall back to the mock button.
+    assert "actions.order.create" in js and 'paypal_sdk_client_id === "sb"' in js
+    assert 'id="mockpp"' in js and "could not load" in js and "mockApprove()" in js
+    # with sandbox keys, the buttons still use the server-created order
+    assert "createOrder: () => ORDER" in js
